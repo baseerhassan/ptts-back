@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "Qo1DnjKwN2bHwZjwrYcsvh1oc66wr/qRxUhBzKKPEFw=",
+  "Source": "SystemUsersAPI",
+  "BasePath": "_content/SystemUsersAPI",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

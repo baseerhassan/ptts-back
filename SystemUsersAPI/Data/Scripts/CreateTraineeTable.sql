@@ -1,0 +1,22 @@
+CREATE TABLE [dbo].[Trainee] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [Arm] NVARCHAR(100) NOT NULL,
+    [Rank] NVARCHAR(100) NOT NULL,
+    [Name] NVARCHAR(200) NOT NULL,
+    [PakNo] NVARCHAR(100) NOT NULL,
+    [Gender] NVARCHAR(50) NOT NULL,
+    [RegistrationNo] NVARCHAR(100) NOT NULL,
+    [CourseNo] NVARCHAR(100) NOT NULL,
+    [IsActive] BIT NOT NULL DEFAULT 1,
+    [CreatedBy] NVARCHAR(100) NOT NULL,
+    [CreatedDate] DATETIME NOT NULL,
+    [ModifiedBy] NVARCHAR(100) NULL,
+    [ModifiedDate] DATETIME NULL,
+    CONSTRAINT [PK_Trainee] PRIMARY KEY CLUSTERED ([Id] ASC),
+    CONSTRAINT [UQ_Trainee_PakNo] UNIQUE NONCLUSTERED ([PakNo] ASC)
+);
+
+GO
+
+CREATE NONCLUSTERED INDEX [IX_Trainee_IsActive] ON [dbo].[Trainee]([IsActive] ASC);
+GO
