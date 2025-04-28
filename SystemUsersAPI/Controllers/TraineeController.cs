@@ -37,6 +37,32 @@ namespace SystemUsersAPI.Controllers
             return trainee;
         }
 
+        // GET: api/Trainee/Course/5
+        [HttpGet("Course/{courseId}")]
+        public async Task<ActionResult<IEnumerable<Trainee>>> GetTraineesByCourse(int courseId)
+        {
+            // Find TraineeIds associated with the given courseId from the Attendance table
+            var traineeIds = await _context.Trainee
+                                        .Where(a => a.CourseId.ToString() == courseId.ToString())
+                                        .Select(a => a.Id)
+                                        .Distinct()
+                                        .ToListAsync();
+
+            if (traineeIds == null)
+            {
+                // Return an empty list if no trainees are found for this course
+                // Alternatively, could return NotFound(), but an empty list is often preferred for collection endpoints
+                return Ok(new List<Trainee>()); 
+            }
+
+            // Fetch Trainee details for the found TraineeIds
+            var trainees = await _context.Trainee
+                                        .Where(t => traineeIds.Contains(t.Id))
+                                        .ToListAsync();
+
+            return trainees;
+        }
+
         // POST: api/Trainee
         [HttpPost]
         public async Task<ActionResult<Trainee>> CreateTrainee(Trainee trainee)

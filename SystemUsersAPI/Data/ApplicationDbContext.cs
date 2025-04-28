@@ -16,6 +16,10 @@ namespace SystemUsersAPI.Data
         
         public DbSet<SystemUser> SystemUsers { get;  set; }
         public DbSet<Trainee> Trainee { get; set; }
+
+        public DbSet<ActivityPlanner> ActivityPlanner { get; set; }
+        public DbSet<Attendance> Attendance { get; set; }
+        public DbSet<Evaluation> Evaluation { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<SystemUser>()
@@ -37,6 +41,19 @@ namespace SystemUsersAPI.Data
              modelBuilder.Entity<Trainee>()
                 .HasIndex(c => new { c.PakNo, c.CourseId } )
                 .IsUnique();
+                
+             modelBuilder.Entity<ActivityPlanner>()
+                .HasIndex(c => new { c.ActivityId, c.CourseId, c.Date } )
+                .IsUnique();
+
+             modelBuilder.Entity<Attendance>()
+                .HasIndex(a => new { a.ActivityId, a.CourseId, a.TraineeId })
+                .IsUnique();
+
+             modelBuilder.Entity<Evaluation>()
+                .HasIndex(e => new { e.ActivityId, e.CourseId, e.TraineeId })
+                .IsUnique();
+
         }
 
         
