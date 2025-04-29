@@ -20,6 +20,11 @@ namespace SystemUsersAPI.Data
         public DbSet<ActivityPlanner> ActivityPlanner { get; set; }
         public DbSet<Attendance> Attendance { get; set; }
         public DbSet<Evaluation> Evaluation { get; set; }
+        public DbSet<Form> Forms { get; set; }
+        public DbSet<FormColumn> FormColumns { get; set; }
+        public DbSet<FormData> FormData { get; set; }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<SystemUser>()
@@ -53,6 +58,21 @@ namespace SystemUsersAPI.Data
              modelBuilder.Entity<Evaluation>()
                 .HasIndex(e => new { e.ActivityId, e.CourseId, e.TraineeId })
                 .IsUnique();
+            
+            modelBuilder.Entity<Form>()
+                .HasMany(f => f.FormColumns)
+                .WithOne(fc => fc.Form)
+                .HasForeignKey(fc => fc.FormId);
+
+            modelBuilder.Entity<Form>()
+                .HasMany(f => f.FormData)
+                .WithOne(fd => fd.Form)
+                .HasForeignKey(fd => fd.FormId);
+
+            modelBuilder.Entity<FormColumn>()
+                .HasMany(fc => fc.FormData)
+                .WithOne(fd => fd.FormColumn)
+                .HasForeignKey(fd => fd.ColumnId);
 
         }
 
