@@ -18,6 +18,20 @@ namespace SystemUsersAPI.Controllers
             _context = context;
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<bool>> GetForm(int id)
+        {
+           return await _context.Forms.AnyAsync(e => e.ActivityId == id);
+
+        }
+
+        [HttpGet("BasicForm")]
+        public async Task<ActionResult<IEnumerable<Form>>> GetAllForm()
+        {
+            var forms = await _context.Forms.ToListAsync();
+            return Ok(forms);
+        }
+
         [HttpPost]
         public async Task<ActionResult<Form>> CreateForm([FromBody] FormBuilderRequest request)
         {
