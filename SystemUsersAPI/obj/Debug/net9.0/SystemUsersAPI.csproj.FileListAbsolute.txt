@@ -148,6 +148,7 @@ D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\SystemUsersAPI.AssemblyInfo.cs
 D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\SystemUsersAPI.csproj.CoreCompileInputs.cache
 D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\SystemUsersAPI.MvcApplicationPartsAssemblyInfo.cs
 D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\SystemUsersAPI.MvcApplicationPartsAssemblyInfo.cache
+D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\SystemUsersAPI.sourcelink.json
 D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\scopedcss\bundle\SystemUsersAPI.styles.css
 D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\staticwebassets.build.json
 D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\staticwebassets.development.json
@@ -164,4 +165,3 @@ D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\refint\SystemUsersAPI.dll
 D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\SystemUsersAPI.pdb
 D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\SystemUsersAPI.genruntimeconfig.cache
 D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\ref\SystemUsersAPI.dll
-D:\PTTS\traeback\SystemUsersAPI\obj\Debug\net9.0\SystemUsersAPI.sourcelink.json

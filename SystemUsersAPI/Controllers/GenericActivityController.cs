@@ -90,6 +90,88 @@ namespace SystemUsersAPI.Controllers
             }
         }
 
+        [HttpGet("{tableName}/Course/{id}")]
+        public async Task<ActionResult<dynamic>> GetByCourseId(string tableName, int id)
+        {
+            try
+            {
+                // Validate table name format
+                if (!IsValidActivityTable(tableName))
+                {
+                    return BadRequest($"Invalid table name format. Table name must start with 'Act_'.");
+                }
+
+                // Check if table exists in database
+                if (!await TableExistsAsync(tableName))
+                {
+                    return NotFound($"Table '{tableName}' does not exist in the database.");
+                }
+
+                // Get data from the table by id
+                var data = await GetDataByCourseIdFromTableAsync(tableName, id);
+                Console.WriteLine("Swim data is " + data);
+                
+                // If no data found, return table schema instead of NotFound
+                if (data == null || (data is List<ExpandoObject> list && list.Count == 0))
+                {
+                    
+                    // Get table schema
+                    //var tableSchema = await GetTableSchemaAsync(tableName);
+                    data = await GetDataFromTableAsync(tableName);
+                    Console.WriteLine("Swim data inside " + data.Count);
+                    Console.WriteLine("Swim data inside " + data);
+                   // return Ok(new { message = $"No records found with CourseId {id} in table '{tableName}'.", columns = tableSchema });
+                }
+
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // PUT: api/GenericActivity/{tableName}/Course/{courseId}/TraineeId/{traineeId}
+        [HttpPut("{tableName}/Course/{courseId}/TraineeId/{traineeId}")]
+        public async Task<IActionResult> UpdateByCourseAndTrainee(string tableName, int courseId, int traineeId, [FromBody] JsonElement payload)
+        {
+            try
+            {
+                // Validate table name format
+                if (!IsValidActivityTable(tableName))
+                {
+                    return BadRequest($"Invalid table name format. Table name must start with 'Act_'.");
+                }
+
+                // Check if table exists in database
+                if (!await TableExistsAsync(tableName))
+                {
+                    return NotFound($"Table '{tableName}' does not exist in the database.");
+                }
+
+                // Check if record exists for the given CourseId and TraineeId
+                var existingData = await GetDataByCourseAndTraineeIdFromTableAsync(tableName, courseId, traineeId);
+                if (existingData == null)
+                {
+                    return NotFound($"No record found with CourseId {courseId} and TraineeId {traineeId} in table '{tableName}'.");
+                }
+
+                // Update data in the table
+                await UpdateDataByCourseAndTraineeIdInTableAsync(tableName, courseId, traineeId, payload);
+
+                // Fetch and return the updated record
+                var updatedData = await GetDataByCourseAndTraineeIdFromTableAsync(tableName, courseId, traineeId);
+                return Ok(updatedData);
+
+                //return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+
         // POST: api/GenericActivity/{tableName}
         [HttpPost("{tableName}")]
         public async Task<ActionResult<dynamic>> Create(string tableName, [FromBody] JsonElement payload)
@@ -226,38 +308,51 @@ namespace SystemUsersAPI.Controllers
         private async Task<List<dynamic>> GetDataFromTableAsync(string tableName)
         {
             var connection = _context.Database.GetDbConnection();
-            var result = new List<dynamic>();
+            //using var connection = new SqlConnection(_yourConnectionString);
+            await connection.OpenAsync();
 
-            try
+            using var command = connection.CreateCommand();
+            command.CommandText = $"SELECT TOP 100 * FROM [PTMS].[dbo].[{tableName}]";
+
+            using var reader = await command.ExecuteReaderAsync();
+            var result = new List<ExpandoObject>();
+
+            // Extract column names from schema before reading rows
+            var schemaTable = reader.GetSchemaTable();
+            var columnNames = schemaTable
+                .Rows
+                .Cast<DataRow>()
+                .Select(row => row["ColumnName"].ToString())
+                .Where(name => !string.Equals(name, "Id", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            // Read data rows
+            while (await reader.ReadAsync())
             {
-                await connection.OpenAsync();
-                using var command = connection.CreateCommand();
-                command.CommandText = $"SELECT top 100 * FROM [PTMS].[dbo].{tableName}";
-
-                using var reader = await command.ExecuteReaderAsync();
-                var schemaTable = reader.GetSchemaTable();
-
-                while (await reader.ReadAsync())
+                var item = new ExpandoObject() as IDictionary<string, object>;
+                foreach (var columnName in columnNames)
                 {
-                    var item = new ExpandoObject() as IDictionary<string, object>;
-                    for (var i = 0; i < reader.FieldCount; i++)
-                    {
-                        var columnName = reader.GetName(i);
-                        var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                        item[columnName] = value;
-                    }
-                    result.Add((ExpandoObject)item);
+                    var index = reader.GetOrdinal(columnName);
+                    var value = reader.IsDBNull(index) ? null : reader.GetValue(index);
+                    item[columnName] = value;
                 }
-
-                return result;
+                result.Add((ExpandoObject)item);
             }
-            finally
+
+            // Return one row with nulls if no data found
+            if (result.Count == 0)
             {
-                if (connection.State == ConnectionState.Open)
+                var nullItem = new ExpandoObject() as IDictionary<string, object>;
+                foreach (var columnName in columnNames)
                 {
-                    await connection.CloseAsync();
+                    nullItem[columnName] = null;
                 }
+                result.Add((ExpandoObject)nullItem);
             }
+
+            return result.Cast<dynamic>().ToList();
+
+
         }
 
         private async Task<dynamic> GetDataByIdFromTableAsync(string tableName, int id)
@@ -273,6 +368,95 @@ namespace SystemUsersAPI.Controllers
                 parameter.ParameterName = "@Id";
                 parameter.Value = id;
                 command.Parameters.Add(parameter);
+
+                using var reader = await command.ExecuteReaderAsync();
+                if (!await reader.ReadAsync())
+                {
+                    return null;
+                }
+
+                var item = new ExpandoObject() as IDictionary<string, object>;
+                for (var i = 0; i < reader.FieldCount; i++)
+                {
+                    var columnName = reader.GetName(i);
+                    // Skip the Id column to exclude it from the user data grid
+                    if (string.Equals(columnName, "Id", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                        
+                    var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                    item[columnName] = value;
+                }
+
+                return (ExpandoObject)item;
+            }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                {
+                    await connection.CloseAsync();
+                }
+            }
+        }
+
+         private async Task<dynamic> GetDataByCourseIdFromTableAsync(string tableName, int id)
+        {
+            var connection = _context.Database.GetDbConnection();
+            var results = new List<ExpandoObject>();
+            try
+            {
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                command.CommandText = $"SELECT * FROM {tableName} WHERE CourseId = @Id";
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = "@Id";
+                parameter.Value = id;
+                command.Parameters.Add(parameter);
+
+                using var reader = await command.ExecuteReaderAsync();
+                //using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var item = new ExpandoObject() as IDictionary<string, object>;
+                    for (var i = 0; i < reader.FieldCount; i++)
+                    {
+                        var columnName = reader.GetName(i);
+                        var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                        item[columnName] = value;
+                    }
+
+                    results.Add((ExpandoObject)item);
+                }
+
+                return results;
+            }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                {
+                    await connection.CloseAsync();
+                }
+            }
+        }
+
+        private async Task<dynamic> GetDataByCourseAndTraineeIdFromTableAsync(string tableName, int courseId, int traineeId)
+        {
+            var connection = _context.Database.GetDbConnection();
+
+            try
+            {
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                command.CommandText = $"SELECT * FROM [PTMS].[dbo].{tableName} WHERE CourseId = @CourseId AND TraineeId = @TraineeId";
+                
+                var courseIdParam = command.CreateParameter();
+                courseIdParam.ParameterName = "@CourseId";
+                courseIdParam.Value = courseId;
+                command.Parameters.Add(courseIdParam);
+                
+                var traineeIdParam = command.CreateParameter();
+                traineeIdParam.ParameterName = "@TraineeId";
+                traineeIdParam.Value = traineeId;
+                command.Parameters.Add(traineeIdParam);
 
                 using var reader = await command.ExecuteReaderAsync();
                 if (!await reader.ReadAsync())
@@ -388,7 +572,68 @@ namespace SystemUsersAPI.Controllers
             var idParameter = new SqlParameter("@Id", SqlDbType.Int) { Value = id };
             parameters.Add(idParameter);
             
-            var sql = $"UPDATE {tableName} SET {string.Join(", ", setStatements)} WHERE Id = @Id";
+            var sql = $"UPDATE [PTMS].[dbo].{tableName} SET {string.Join(", ", setStatements)} WHERE Id = @Id";
+            
+            var connection = _context.Database.GetDbConnection();
+            try
+            {
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                command.CommandText = sql;
+                foreach (var parameter in parameters)
+                {
+                    command.Parameters.Add(parameter);
+                }
+                
+                await command.ExecuteNonQueryAsync();
+            }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                {
+                    await connection.CloseAsync();
+                }
+            }
+        }
+        
+        private async Task UpdateDataByCourseAndTraineeIdInTableAsync(string tableName, int courseId, int traineeId, JsonElement payload)
+        {
+            // Get table schema
+            var tableSchema = await GetTableSchemaAsync(tableName);
+            
+            // Build SQL update statement
+            var setStatements = new List<string>();
+            var parameters = new List<SqlParameter>();
+            
+            foreach (var property in payload.EnumerateObject())
+            {
+                var columnName = property.Name;
+                // Skip if column doesn't exist in the table or if it's the Id, CourseId, or TraineeId column
+                if (!tableSchema.Any(c => string.Equals(c.ColumnName, columnName, StringComparison.OrdinalIgnoreCase)) ||
+                    string.Equals(columnName, "Id", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(columnName, "CourseId", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(columnName, "TraineeId", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                
+                setStatements.Add($"{columnName} = @{columnName}");
+                
+                var parameter = new SqlParameter($"@{columnName}", GetSqlDbType(property.Value));
+                parameter.Value = GetValueFromJsonElement(property.Value);
+                parameters.Add(parameter);
+            }
+            
+            if (setStatements.Count == 0)
+            {
+                throw new InvalidOperationException("No valid columns provided for update operation.");
+            }
+            
+            var courseIdParameter = new SqlParameter("@CourseId", SqlDbType.Int) { Value = courseId };
+            parameters.Add(courseIdParameter);
+            
+            var traineeIdParameter = new SqlParameter("@TraineeId", SqlDbType.Int) { Value = traineeId };
+            parameters.Add(traineeIdParameter);
+            
+            var sql = $"UPDATE [PTMS].[dbo].{tableName} SET {string.Join(", ", setStatements)} WHERE CourseId = @CourseId AND TraineeId = @TraineeId";
             
             var connection = _context.Database.GetDbConnection();
             try
