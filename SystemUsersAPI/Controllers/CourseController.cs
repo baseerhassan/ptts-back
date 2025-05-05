@@ -82,10 +82,10 @@ namespace SystemUsersAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Course>> PostCourse(Course course)
         {
-            if (await _context.Course.AnyAsync(c => c.CourseName == course.CourseName && c.IsActive != false))
-            {
-                return BadRequest("Course name must be unique");
-            }
+            // if (await _context.Course.AnyAsync(c => c.CourseName == course.CourseName && c.CourseNo == course.CourseNo && c.CourseName == course.CourseName))
+            // {
+            //     return BadRequest("Course name must be unique");
+            // }
 
             if (course.FromDate > course.ToDate)
             {
