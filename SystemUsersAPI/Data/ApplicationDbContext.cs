@@ -23,6 +23,8 @@ namespace SystemUsersAPI.Data
         public DbSet<Form> Forms { get; set; }
         public DbSet<FormColumn> FormColumns { get; set; }
         public DbSet<FormData> FormData { get; set; }
+        public DbSet<LookupExVisionShade> LookupExVisionShades { get; set; }
+        public DbSet<PerfExvision> PerfExvisions { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

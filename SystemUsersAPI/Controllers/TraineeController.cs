@@ -20,7 +20,15 @@ namespace SystemUsersAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Trainee>>> GetTrainees()
         {
-            return await _context.Trainee.ToListAsync();
+            var trainees = await _context.Trainee.ToListAsync();
+            foreach (var trainee in trainees)
+            {
+                if (!string.IsNullOrEmpty(trainee.Picture))
+                {
+                    trainee.Picture = Path.GetFileName(trainee.Picture);
+                }
+            }
+            return trainees;
         }
 
         // GET: api/Trainee/5
@@ -98,13 +106,42 @@ namespace SystemUsersAPI.Controllers
                 return BadRequest();
             }
 
-            if (await _context.Trainee.AnyAsync(t => t.PakNo == trainee.PakNo && t.Id != id ))
+            var existingTrainee = await _context.Trainee.FindAsync(id);
+            if (existingTrainee == null)
+            {
+                return NotFound();
+            }
+
+            if (await _context.Trainee.AnyAsync(t => t.PakNo == trainee.PakNo && t.Id != id))
             {
                 return BadRequest("PAK number must be unique");
             }
 
-            trainee.ModifiedDate = DateTime.UtcNow;
-            _context.Entry(trainee).State = EntityState.Modified;
+            // Handle picture update
+            if (!string.IsNullOrEmpty(trainee.Picture) && trainee.Picture != existingTrainee.Picture)
+            {
+                // Delete the old picture if it exists
+                if (!string.IsNullOrEmpty(existingTrainee.Picture))
+                {
+                    var oldPicturePath = Path.Combine(Directory.GetCurrentDirectory(), "ProfilePics", Path.GetFileName(existingTrainee.Picture));
+                    if (System.IO.File.Exists(oldPicturePath))
+                    {
+                        System.IO.File.Delete(oldPicturePath);
+                    }
+                }
+            }
+
+            // Update existing trainee properties
+            existingTrainee.Arm = trainee.Arm;
+            existingTrainee.Rank = trainee.Rank;
+            existingTrainee.Name = trainee.Name;
+            existingTrainee.PakNo = trainee.PakNo;
+            existingTrainee.Gender = trainee.Gender;
+            existingTrainee.RegistrationNo = trainee.RegistrationNo;
+            existingTrainee.CourseId = trainee.CourseId;
+            existingTrainee.Picture = trainee.Picture;
+            existingTrainee.ModifiedDate = DateTime.UtcNow;
+            existingTrainee.ModifiedBy = trainee.ModifiedBy;
 
             try
             {

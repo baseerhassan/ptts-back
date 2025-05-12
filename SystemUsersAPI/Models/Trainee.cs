@@ -16,4 +16,8 @@ public class Trainee
     public string? ModifiedBy { get; set; }
     public DateTime? ModifiedDate { get; set; }
      public string? CourseName { get; set; }
+
+     public int? Age { get; set; }
+     public string? Country { get; set; }
+    public string? Picture { get; set; }
 }
