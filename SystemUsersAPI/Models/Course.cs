@@ -14,6 +14,7 @@ namespace SystemUsersAPI.Models;
         public int? TotalOfficers { get; set; }
         public int? TotalAirmen { get; set; }
         public int? TotalCivilians { get; set; }
+        public int? TotalForeigners { get; set; }
         public string? Remarks { get; set; }
          public string? TotalDuration { get; set; }
          public string? CourseColor { get; set; }
