@@ -10,6 +10,8 @@ namespace SystemUsersAPI.Data
         {
         }
 
+
+        public DbSet<PerfCourseCritiq> PerfCourseCritiqs  { get; set; }
         public DbSet<Course> Course { get; set; }
         public DbSet<BasicCourse> BasicCourse { get; set; }
         public DbSet<BasicActivity> BasicActivity { get; set; }
@@ -25,7 +27,7 @@ namespace SystemUsersAPI.Data
         public DbSet<FormData> FormData { get; set; }
         public DbSet<LookupExVisionShade> LookupExVisionShades { get; set; }
         public DbSet<PerfExvision> PerfExvisions { get; set; }
-
+        public DbSet<InstructorCourseMap> InstructorCourseMaps { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -75,7 +77,16 @@ namespace SystemUsersAPI.Data
                 .HasMany(fc => fc.FormData)
                 .WithOne(fd => fd.FormColumn)
                 .HasForeignKey(fd => fd.ColumnId);
+            
+            modelBuilder.Entity<PerfCourseCritiq>()
+                .HasIndex(c => new { c.TraineeId, c.CourseId } )
+                .IsUnique();
 
+            modelBuilder.Entity<InstructorCourseMap>()
+                .HasIndex(c => new { c.CourseId, c.SystemUserId } )
+                .IsUnique();
+
+         
         }
 
         

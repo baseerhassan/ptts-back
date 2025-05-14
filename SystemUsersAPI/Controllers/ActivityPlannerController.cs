@@ -44,6 +44,26 @@ namespace SystemUsersAPI.Controllers
             return activityPlanner;
         }
 
+
+         [HttpGet("ByCourseId")]
+        public async Task<ActionResult<IEnumerable<ActivityPlanner>>> GetActivityPlannerByCourse([FromQuery] int cid)
+        {
+            var activityPlanner = await _context.ActivityPlanner
+                .Include(a => a.Course)
+                .Include(a => a.Activity)
+                .Where(a => a.CourseId == cid)
+                .ToListAsync();
+             
+            if (activityPlanner == null)
+            {
+                return NotFound();
+            }
+
+            return activityPlanner;
+        }
+
+
+
         // POST: api/ActivityPlanner
         [HttpPost]
         public async Task<ActionResult<ActivityPlanner>> CreateActivityPlanner(ActivityPlanner activityPlanner)
