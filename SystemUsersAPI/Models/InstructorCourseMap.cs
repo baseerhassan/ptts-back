@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace SystemUsersAPI.Models
 {
-    [Table("InstructorCourseMap")]
+    [Table("InstrCourseMap")]
     public class InstructorCourseMap
     {
         public int Id { get; set; }

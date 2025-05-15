@@ -9,4 +9,6 @@ public class BasicActivity
     public DateTime CreatedDate { get; set; }
     public string? ModifiedBy { get; set; }
     public DateTime? ModifiedDate { get; set; }
+
+    public int? Percentage { get; set; }
 }

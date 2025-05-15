@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SystemUsersAPI.Data;
 using SystemUsersAPI.Models;
-
+using System.Text.Json;
 namespace SystemUsersAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -50,20 +50,35 @@ namespace SystemUsersAPI.Controllers
         {
             try
             {
+                Console.WriteLine("Map is : " + payload);
+                // Configure JSON options to handle case insensitivity
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                
                 // Try to deserialize as a single object
-                var singleMap = System.Text.Json.JsonSerializer.Deserialize<InstructorCourseMap>(payload.ToString());
+                var singleMap = System.Text.Json.JsonSerializer.Deserialize<InstructorCourseMap>(payload.ToString(), jsonOptions);
+                Console.WriteLine("Map is : " + singleMap);
                 return await CreateSingleMapping(singleMap);
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine("Single map deserialization error: " + ex.Message);
                 try
                 {
-                    // Try to deserialize as a list
-                    var mapList = System.Text.Json.JsonSerializer.Deserialize<List<InstructorCourseMap>>(payload.ToString());
+                    Console.WriteLine("Map is in Multi Map POST : " + payload.ToString());
+                    // Try to deserialize as a list with case insensitivity
+                    var jsonOptions = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var mapList = System.Text.Json.JsonSerializer.Deserialize<List<InstructorCourseMap>>(payload.ToString(), jsonOptions);
                     return await CreateMultipleMappings(mapList);
                 }
-                catch
+                catch (Exception listEx)
                 {
+                    Console.WriteLine("List deserialization error: " + listEx.Message);
                     return BadRequest("Invalid payload format");
                 }
             }
@@ -71,6 +86,7 @@ namespace SystemUsersAPI.Controllers
 
         private async Task<ActionResult<InstructorCourseMap>> CreateSingleMapping(InstructorCourseMap map)
         {
+            Console.WriteLine("Map is SingleMapp : " + map);
             if (!await ValidateMapping(map))
             {
                 return BadRequest("Invalid CourseId or SystemUserId");
@@ -140,8 +156,32 @@ namespace SystemUsersAPI.Controllers
 
         private async Task<bool> ValidateMapping(InstructorCourseMap map)
         {
-            return await _context.Course.AnyAsync(c => c.CourseId == map.CourseId) &&
-                   await _context.SystemUsers.AnyAsync(u => u.Id == map.SystemUserId);
+            Console.WriteLine($"Validating mapping - CourseId: {map.CourseId}, SystemUserId: {map.SystemUserId}");
+            
+            var courseExists = await _context.Course.AnyAsync(c => c.CourseId == map.CourseId);
+            var userExists = await _context.SystemUsers.AnyAsync(u => u.Id == map.SystemUserId);
+            
+            Console.WriteLine($"Validation results - Course exists: {courseExists}, User exists: {userExists}");
+            
+            return courseExists && userExists;
+        }
+
+        // DELETE: api/InstructorCourseMap/course/{courseId}/user/{userId}
+        [HttpDelete("course/{courseId}/user/{userId}")]
+        public async Task<IActionResult> DeleteInstructorCourseMap(int courseId, int userId)
+        {
+            var mapping = await _context.InstructorCourseMaps
+                .FirstOrDefaultAsync(m => m.CourseId == courseId && m.SystemUserId == userId);
+
+            if (mapping == null)
+            {                
+                return NotFound($"No mapping found for Course ID {courseId} and User ID {userId}");
+            }
+
+            _context.InstructorCourseMaps.Remove(mapping);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
