@@ -23,7 +23,7 @@ namespace SystemUsersAPI.Controllers
             return await _context.ActivityPlanner
                 .Include(a => a.Course)
                 .Include(a => a.Activity)
-                .Where(a => a.IsActive)
+                .Where(a => a.Course != null && a.Course.IsActive == true)
                 .ToListAsync();
         }
 
@@ -51,7 +51,8 @@ namespace SystemUsersAPI.Controllers
             var activityPlanner = await _context.ActivityPlanner
                 .Include(a => a.Course)
                 .Include(a => a.Activity)
-                .Where(a => a.CourseId == cid)
+                .Where(a => a.CourseId == cid && a.IsActive)
+             
                 .ToListAsync();
              
             if (activityPlanner == null)
