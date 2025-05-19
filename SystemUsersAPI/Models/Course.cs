@@ -18,4 +18,7 @@ namespace SystemUsersAPI.Models;
         public string? Remarks { get; set; }
          public string? TotalDuration { get; set; }
          public string? CourseColor { get; set; }
+        public DateOnly? Gap_From { get; set; }
+        public DateOnly? Gap_To { get; set; }
+        public string? Gap_Reason { get; set; }
     }
